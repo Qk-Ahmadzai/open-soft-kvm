@@ -149,7 +149,7 @@ def test_reload_password_picks_up_a_change_from_another_process(tmp_path):
 
 def test_login_accepts_a_password_changed_in_another_process(secure_client, secure_store):
     """A reset performed while the server runs must take effect immediately."""
-    from casakvm.auth import hash_password
+    from softkvm.auth import hash_password
 
     new_hash, new_salt = hash_password("brand-new-password")
     # Write directly to the file, bypassing the running server's memory.
