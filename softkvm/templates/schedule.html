@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Schedule - SoftKVM{% endblock %}
+{% block heading %}Schedule{% endblock %}
+{% block subtitle %}Run host actions automatically{% endblock %}
+
+{% block content %}
+
+<div class="split">
+    <section class="section" aria-labelledby="tasks-title">
+        <div class="section-head">
+            <h2 class="section-title" id="tasks-title">Scheduled tasks</h2>
+            <span class="section-note" id="taskCount">-</span>
+        </div>
+
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th scope="col">Task</th>
+                        <th scope="col">Time</th>
+                        <th scope="col">Repeats</th>
+                        <th scope="col">Last run</th>
+                        <th scope="col" class="num">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="taskRows">
+                    <tr><td colspan="5" class="empty-row">Loading schedule...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="new-task-title">
+        <div class="section-head">
+            <h2 class="section-title" id="new-task-title">Add a task</h2>
+        </div>
+
+        <form class="card" id="taskForm">
+            <div class="field">
+                <label for="taskAction">Action</label>
+                <select class="select" id="taskAction" required></select>
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label for="taskTime">Time</label>
+                    <input class="input" id="taskTime" type="time" value="22:00" required>
+                </div>
+                <div class="field">
+                    <label for="taskLabel">Label</label>
+                    <input class="input" id="taskLabel" type="text" placeholder="Nightly reboot" maxlength="60">
+                </div>
+            </div>
+
+            <div class="field" id="targetField" hidden>
+                <label for="taskTarget">Target MAC address</label>
+                <input class="input" id="taskTarget" type="text" placeholder="AA:BB:CC:DD:EE:FF"
+                       pattern="([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}">
+                <p class="hint">Only needed for Wake-on-LAN tasks.</p>
+            </div>
+
+            <label class="check-row">
+                <input type="checkbox" id="taskDaily" checked>
+                <span>Repeat every day</span>
+            </label>
+
+            <button class="btn btn-primary" type="submit" style="margin-top: 1rem;">
+                <svg class="icon icon-sm"><use href="#i-plus"></use></svg> Add task
+            </button>
+        </form>
+    </section>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/schedule.js"></script>
+{% endblock %}

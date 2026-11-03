@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Settings - SoftKVM{% endblock %}
+{% block heading %}Settings{% endblock %}
+{% block subtitle %}Appearance, streaming and security{% endblock %}
+
+{% block content %}
+
+<div class="split">
+    <div>
+        <!-- ---------- appearance ---------- -->
+        <section class="section" aria-labelledby="appearance-title">
+            <div class="section-head">
+                <h2 class="section-title" id="appearance-title">Appearance</h2>
+            </div>
+
+            <article class="card">
+                <div class="field">
+                    <label for="themeSelect">Theme</label>
+                    <select class="select" id="themeSelect">
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Wallpaper</label>
+                    <div class="wallpaper-grid" id="wallpaperGrid"></div>
+                </div>
+
+                <label class="check-row">
+                    <input type="checkbox" id="blurToggle" checked>
+                    <span>Blur the wallpaper behind the panels</span>
+                </label>
+            </article>
+        </section>
+
+        <!-- ---------- streaming ---------- -->
+        <section class="section" aria-labelledby="stream-title">
+            <div class="section-head">
+                <h2 class="section-title" id="stream-title">Streaming</h2>
+            </div>
+
+            <article class="card">
+                <div class="field-row">
+                    <div class="field">
+                        <label for="widthSelect">Width</label>
+                        <select class="select" id="widthSelect">
+                            <option value="960">960 px</option>
+                            <option value="1280">1280 px</option>
+                            <option value="1600">1600 px</option>
+                            <option value="1920">1920 px</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="heightSelect">Height</label>
+                        <select class="select" id="heightSelect">
+                            <option value="540">540 px</option>
+                            <option value="720">720 px</option>
+                            <option value="900">900 px</option>
+                            <option value="1080">1080 px</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="fpsSetting">Frame rate</label>
+                        <select class="select" id="fpsSetting">
+                            <option value="5">5 fps</option>
+                            <option value="10">10 fps</option>
+                            <option value="15">15 fps</option>
+                            <option value="25">25 fps</option>
+                            <option value="30">30 fps</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="qualitySetting">Quality</label>
+                        <select class="select" id="qualitySetting">
+                            <option value="40">Low</option>
+                            <option value="60">Medium</option>
+                            <option value="75">High</option>
+                            <option value="90">Maximum</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="monitorSetting">Target monitor</label>
+                    <select class="select" id="monitorSetting"></select>
+                </div>
+
+                <button class="btn btn-primary" type="button" id="btnSaveStream">Save streaming settings</button>
+            </article>
+        </section>
+
+        <!-- ---------- security ---------- -->
+        <section class="section" aria-labelledby="security-title">
+            <div class="section-head">
+                <h2 class="section-title" id="security-title">Security</h2>
+            </div>
+
+            <article class="card">
+                <form id="passwordForm">
+                    <div class="field">
+                        <label for="currentPassword">Current password</label>
+                        <input class="input" id="currentPassword" type="password" autocomplete="current-password" required>
+                    </div>
+                    <div class="field">
+                        <label for="newPassword">New password</label>
+                        <input class="input" id="newPassword" type="password" autocomplete="new-password"
+                               minlength="8" required>
+                        <p class="hint">At least 8 characters.</p>
+                    </div>
+                    <div class="field">
+                        <label for="confirmPassword">Confirm new password</label>
+                        <input class="input" id="confirmPassword" type="password" autocomplete="new-password" required>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Change password</button>
+                </form>
+            </article>
+        </section>
+    </div>
+
+    <!-- ---------- sidebar column ---------- -->
+    <div>
+        <section class="section" aria-labelledby="access-title">
+            <div class="section-head">
+                <h2 class="section-title" id="access-title">Access from your phone</h2>
+            </div>
+            <article class="card">
+                <div class="qr-box">
+                    <img id="qrImage" alt="QR code linking to this dashboard" src="/qr.svg">
+                </div>
+                <p class="hint" style="text-align: center;">Scan to open SoftKVM on a phone.</p>
+                <div class="list-rows" id="urlList" style="margin-top: 0.9rem;"></div>
+            </article>
+        </section>
+
+        <section class="section" aria-labelledby="about-title">
+            <div class="section-head">
+                <h2 class="section-title" id="about-title">About this server</h2>
+            </div>
+            <article class="card">
+                <dl class="kv-list" id="aboutList">
+                    <div class="kv"><dt>Version</dt><dd id="aboutVersion">{{ app_version }}</dd></div>
+                    <div class="kv"><dt>Host</dt><dd id="aboutHost">-</dd></div>
+                    <div class="kv"><dt>Platform</dt><dd id="aboutPlatform">{{ platform_name }}</dd></div>
+                    <div class="kv"><dt>Input backend</dt><dd id="aboutInput">-</dd></div>
+                    <div class="kv"><dt>Clipboard</dt><dd id="aboutClipboard">-</dd></div>
+                    <div class="kv"><dt>Displays</dt><dd id="aboutMonitors">-</dd></div>
+                </dl>
+            </article>
+        </section>
+
+        <section class="section" aria-labelledby="danger-title">
+            <div class="section-head">
+                <h2 class="section-title" id="danger-title">Danger zone</h2>
+            </div>
+            <article class="card">
+                {% if signed_in %}
+                <p class="hint" style="margin-bottom: 0.9rem;">
+                    Signing out ends this session on the current browser only.
+                </p>
+                <a class="btn btn-danger" href="/logout">
+                    <svg class="icon icon-sm"><use href="#i-logout"></use></svg> Sign out
+                </a>
+                {% else %}
+                <p class="hint">
+                    Authentication is currently disabled, so there is no session to end.
+                </p>
+                {% endif %}
+            </article>
+        </section>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/settings.js"></script>
+{% endblock %}

@@ -1,0 +1,31 @@
+[Unit]
+Description=SoftKVM - browser based KVM and system dashboard (system service)
+Documentation=https://github.com/your-org/softkvm
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=softkvm
+Group=softkvm
+WorkingDirectory=/opt/softkvm
+Environment="SOFTKVM_HOST=0.0.0.0"
+Environment="SOFTKVM_PORT=3699"
+Environment="SOFTKVM_DATA_DIR=/var/lib/softkvm"
+Environment="SOFTKVM_REQUIRE_AUTH=true"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/opt/softkvm/.venv/bin/python /opt/softkvm/server.py
+Restart=always
+RestartSec=5
+TimeoutStopSec=15
+
+# --- hardening ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/softkvm
+PrivateDevices=false
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - SoftKVM{% endblock %}
+{% block heading %}Dashboard{% endblock %}
+{% block subtitle %}Live telemetry for this machine{% endblock %}
+
+{% block content %}
+
+<!-- ---------- headline metrics ---------- -->
+<section class="section" aria-labelledby="overview-title">
+    <div class="section-head">
+        <h2 class="section-title" id="overview-title">At a glance</h2>
+        <span class="section-note" id="overviewNote">-</span>
+    </div>
+
+    <div class="grid">
+        <article class="card">
+            <div class="card-head">
+                <h3 class="card-title">Processor</h3>
+                <span class="card-note" id="cpuCores">-</span>
+            </div>
+            <div class="gauge-row">
+                <div class="gauge-figure">
+                    <span class="gauge-value" id="cpuValue">0%</span>
+                    <span class="gauge-sub" id="cpuFreq">-</span>
+                </div>
+                <svg class="gauge-svg" viewBox="0 0 100 100" role="img" aria-label="Processor load">
+                    <circle class="gauge-track" cx="50" cy="50" r="40"></circle>
+                    <circle class="gauge-arc" id="cpuArc" cx="50" cy="50" r="40"></circle>
+                </svg>
+            </div>
+            <svg class="chart chart-inline" id="cpuSpark" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </article>
+
+        <article class="card">
+            <div class="card-head">
+                <h3 class="card-title">Memory</h3>
+                <span class="card-note" id="memRaw">-</span>
+            </div>
+            <div class="gauge-row">
+                <div class="gauge-figure">
+                    <span class="gauge-value" id="memValue">0%</span>
+                    <span class="gauge-sub" id="memFree">-</span>
+                </div>
+                <svg class="gauge-svg" viewBox="0 0 100 100" role="img" aria-label="Memory usage">
+                    <circle class="gauge-track" cx="50" cy="50" r="40"></circle>
+                    <circle class="gauge-arc ram" id="memArc" cx="50" cy="50" r="40"></circle>
+                </svg>
+            </div>
+            <svg class="chart chart-inline" id="memSpark" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </article>
+
+        <article class="card">
+            <div class="card-head">
+                <h3 class="card-title">Storage</h3>
+                <span class="card-note" id="diskFree">-</span>
+            </div>
+            <div class="gauge-row">
+                <div class="gauge-figure">
+                    <span class="gauge-value" id="diskValue">0%</span>
+                    <span class="gauge-sub" id="diskRaw">-</span>
+                </div>
+                <svg class="gauge-svg" viewBox="0 0 100 100" role="img" aria-label="Storage usage">
+                    <circle class="gauge-track" cx="50" cy="50" r="40"></circle>
+                    <circle class="gauge-arc disk" id="diskArc" cx="50" cy="50" r="40"></circle>
+                </svg>
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-head">
+                <h3 class="card-title">Network</h3>
+                <span class="card-note" id="netAddresses">-</span>
+            </div>
+            <div class="stat-grid">
+                <div class="stat">
+                    <span class="stat-label">Download</span>
+                    <span class="stat-value" id="netDown">-</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Upload</span>
+                    <span class="stat-value" id="netUp">-</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Received</span>
+                    <span class="stat-value" id="netTotal">-</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Sent</span>
+                    <span class="stat-value" id="netSent">-</span>
+                </div>
+            </div>
+        </article>
+
+        <article class="card" aria-label="Resource usage">
+            <div class="card-head">
+                <h3 class="card-title">Resources</h3>
+            </div>
+            <div class="resource-grid">
+                {% for key, label, icon in [
+                    ('cpu', 'Processor', 'i-cpu'),
+                    ('memory', 'Memory', 'i-memory'),
+                    ('disk', 'Storage', 'i-storage'),
+                    ('network', 'Network', 'i-network')
+                ] %}
+                <div class="usage" data-usage="{{ key }}">
+                    <div class="usage-row">
+                        <span class="usage-label">
+                            <svg class="icon icon-sm"><use href="#{{ icon }}"></use></svg>
+                            {{ label }}
+                        </span>
+                        <span class="usage-value" id="usage-{{ key }}">-</span>
+                    </div>
+                    <div class="meter"><span class="meter-fill" id="meter-{{ key }}"></span></div>
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+    </div>
+</section>
+
+<div class="split">
+    <!-- ---------- charts ---------- -->
+    <section class="section" aria-labelledby="charts-title">
+        <div class="section-head">
+            <h2 class="section-title" id="charts-title">Live graphs</h2>
+            <span class="section-note" id="chartWindow">Last 3 minutes</span>
+        </div>
+        <div class="grid">
+            <article class="card">
+                <div class="card-head">
+                    <h3 class="card-title">Processor load</h3>
+                    <span class="card-note" id="chartCpuNow">-</span>
+                </div>
+                <svg class="chart" id="chartCpu" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Processor load over time"></svg>
+                <div class="chart-legend">
+                    <span><span class="legend-dot" style="background: var(--casa-blue)"></span>CPU %</span>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card-head">
+                    <h3 class="card-title">Memory load</h3>
+                    <span class="card-note" id="chartMemNow">-</span>
+                </div>
+                <svg class="chart" id="chartMem" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Memory usage over time"></svg>
+                <div class="chart-legend">
+                    <span><span class="legend-dot" style="background: var(--casa-purple)"></span>RAM %</span>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card-head">
+                    <h3 class="card-title">Throughput</h3>
+                    <span class="card-note" id="chartNetNow">-</span>
+                </div>
+                <svg class="chart" id="chartNet" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Network throughput over time"></svg>
+                <div class="chart-legend">
+                    <span><span class="legend-dot" style="background: var(--casa-cyan)"></span>Download</span>
+                    <span><span class="legend-dot" style="background: var(--casa-green)"></span>Upload</span>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <!-- ---------- system panel ---------- -->
+    <section class="section" aria-labelledby="system-title">
+        <div class="section-head">
+            <h2 class="section-title" id="system-title">System</h2>
+        </div>
+        <article class="card">
+            <dl class="kv-list" id="systemList">
+                <div class="kv"><dt>Host</dt><dd id="sysHost">-</dd></div>
+                <div class="kv"><dt>Operating system</dt><dd id="sysOs">-</dd></div>
+                <div class="kv"><dt>Processor</dt><dd id="sysCpu">-</dd></div>
+                <div class="kv"><dt>Graphics</dt><dd id="sysGpu">-</dd></div>
+                <div class="kv"><dt>Uptime</dt><dd id="sysUptime">-</dd></div>
+                <div class="kv"><dt>Booted</dt><dd id="sysBoot">-</dd></div>
+                <div class="kv"><dt>Addresses</dt><dd id="sysIps">-</dd></div>
+            </dl>
+
+            <div id="sensorBlock" hidden>
+                <h3 class="card-title" style="margin: 1.2rem 0 0.6rem;">Sensors</h3>
+                <div class="list-rows" id="sensorList"></div>
+            </div>
+        </article>
+    </section>
+</div>
+
+<!-- ---------- quick launch ---------- -->
+<section class="section" aria-labelledby="apps-title">
+    <div class="section-head">
+        <h2 class="section-title" id="apps-title">Quick launch</h2>
+        <span class="section-note">Start an application on this host</span>
+    </div>
+    <div class="app-grid" id="appGrid">
+        <div class="app-tile" style="cursor: default;">
+            <div class="app-icon"><svg class="icon"><use href="#i-refresh"></use></svg></div>
+            <span>Loading...</span>
+        </div>
+    </div>
+</section>
+
+<!-- ---------- processes ---------- -->
+<section class="section" aria-labelledby="proc-title">
+    <div class="section-head">
+        <h2 class="section-title" id="proc-title">Top processes</h2>
+        <div class="btn-group" role="group" aria-label="Sort processes by">
+            <button type="button" class="is-active" data-sort="cpu">CPU</button>
+            <button type="button" data-sort="memory">Memory</button>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table class="data">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">User</th>
+                    <th scope="col" class="num">PID</th>
+                    <th scope="col" class="num">CPU</th>
+                    <th scope="col" class="num">Memory</th>
+                    <th scope="col" class="num">Action</th>
+                </tr>
+            </thead>
+            <tbody id="processRows">
+                <tr><td colspan="6" class="empty-row">Loading processes...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ---------- storage ---------- -->
+<section class="section" aria-labelledby="storage-title">
+    <div class="section-head">
+        <h2 class="section-title" id="storage-title">Volumes</h2>
+    </div>
+    <div class="table-wrap">
+        <table class="data">
+            <thead>
+                <tr>
+                    <th scope="col">Mount point</th>
+                    <th scope="col">Device</th>
+                    <th scope="col">Filesystem</th>
+                    <th scope="col" class="num">Used</th>
+                    <th scope="col" class="num">Free</th>
+                    <th scope="col" class="num">Total</th>
+                    <th scope="col" class="num">Usage</th>
+                </tr>
+            </thead>
+            <tbody id="volumeRows">
+                <tr><td colspan="7" class="empty-row">Loading volumes...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

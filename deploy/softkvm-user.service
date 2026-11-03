@@ -1,0 +1,38 @@
+[Unit]
+Description=SoftKVM - browser based KVM and system dashboard (user session)
+Documentation=https://github.com/your-org/softkvm
+# A KVM needs access to the graphical session, so this is a *user* service
+# (systemctl --user) rather than a system one.
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+# %h expands to the user's home directory.
+ExecStart=%h/softkvm/.venv/bin/python %h/softkvm/server.py
+WorkingDirectory=%h/softkvm
+Environment="SOFTKVM_HOST=0.0.0.0"
+Environment="SOFTKVM_PORT=3699"
+Environment="SOFTKVM_DATA_DIR=%h/.local/share/softkvm"
+Environment="SOFTKVM_REQUIRE_AUTH=true"
+Environment="PYTHONUNBUFFERED=1"
+# Pick up DISPLAY / WAYLAND_DISPLAY / XAUTHORITY from the graphical session.
+Environment="DISPLAY=:0"
+Environment="XAUTHORITY=%h/.Xauthority"
+
+Restart=always
+RestartSec=5
+# Give the capture and input threads a moment to unwind.
+TimeoutStopSec=15
+
+# --- hardening (kept permissive enough for screen capture) ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.local/share/softkvm
+# The KVM legitimately needs to read the framebuffer and send input events.
+PrivateDevices=false
+
+[Install]
+WantedBy=default.target

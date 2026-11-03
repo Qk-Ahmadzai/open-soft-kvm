@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}Controls - SoftKVM{% endblock %}
+{% block heading %}Controls{% endblock %}
+{% block subtitle %}Remote switches and host actions{% endblock %}
+
+{% block content %}
+
+<section class="section" aria-labelledby="network-title">
+    <div class="section-head">
+        <h2 class="section-title" id="network-title">Network</h2>
+        <span class="section-note" id="wifiState">Checking...</span>
+    </div>
+    <div class="grid">
+        <article class="switch-card">
+            <div>
+                <h3>Wi-Fi adapter</h3>
+                <p>Enable or disable the wireless interface</p>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-sm" type="button" data-action="wifi_on">Turn on</button>
+                <button class="btn btn-sm" type="button" data-action="wifi_off">Turn off</button>
+            </div>
+        </article>
+
+        <article class="switch-card">
+            <div>
+                <h3>Wake-on-LAN</h3>
+                <p>Send a magic packet to a sleeping machine</p>
+                </br>
+                <form class="wol-form" id="wolForm">
+                    <input class="input" id="wolMac" type="text" placeholder="AA:BB:CC:DD:EE:FF"
+                        pattern="([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}" required>
+                    <button class="btn btn-sm btn-primary" type="submit">Wake</button>
+                </form>
+            </div>
+            
+        </article>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="session-title">
+    <div class="section-head">
+        <h2 class="section-title" id="session-title">Session &amp; display</h2>
+    </div>
+    <div class="grid">
+        <article class="switch-card">
+            <div>
+                <h3>Audio output</h3>
+                <p>Master volume controls for this machine</p>
+                </br>   
+                <div class="btn-row">
+                    <button class="btn btn-sm" type="button" data-action="vol_down">Vol &minus;</button>
+                    <button class="btn btn-sm" type="button" data-action="toggle_mute">Mute</button>
+                    <button class="btn btn-sm" type="button" data-action="vol_up">Vol +</button>
+                </div>
+            </div>
+            
+        </article>
+
+        <article class="switch-card">
+            <div>
+                <h3>Lock workstation</h3>
+                <p>Immediately lock screen</p>
+            </div>
+            <button class="btn btn-sm btn-primary" type="button" data-action="lock">Lock now</button>
+        </article>
+
+        <article class="switch-card">
+            <div>
+                <h3>Display power</h3>
+                <p>Send the display to standby</p>
+            </div>
+            <button class="btn btn-sm" type="button" data-action="screen_sleep">Sleep screen</button>
+        </article>
+
+        <article class="switch-card">
+            <div>
+                <h3>Suspend host</h3>
+                <p>Put the machine to sleep</p>
+            </div>
+            <button class="btn btn-sm" type="button" data-action="suspend">Suspend</button>
+        </article>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="power-title">
+    <div class="section-head">
+        <h2 class="section-title" id="power-title">Power management</h2>
+        <span class="section-note">Destructive actions require confirmation</span>
+    </div>
+    <div class="grid">
+        <article class="switch-card">
+            <div>
+                <h3>Restart</h3>
+                <p>Reboot this machine after a short delay</p>
+            </div>
+            <button class="btn btn-sm btn-danger" type="button" data-power="reboot">Restart</button>
+        </article>
+
+        <article class="switch-card">
+            <div>
+                <h3>Shut down</h3>
+                <p>Power the machine off after a short delay</p>
+            </div>
+            <button class="btn btn-sm btn-danger" type="button" data-power="shutdown">Shut down</button>
+        </article>
+
+        <article class="switch-card">
+            <div>
+                <h3>Cancel pending shutdown</h3>
+                <p>Abort a restart or shutdown that is already queued</p>
+            </div>
+            <button class="btn btn-sm" type="button" data-action="cancel_shutdown">Cancel</button>
+        </article>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="apps-title">
+    <div class="section-head">
+        <h2 class="section-title" id="apps-title">Launch an application</h2>
+    </div>
+    <div class="app-grid" id="controlApps"></div>
+</section>
+
+<section class="section" aria-labelledby="proc-title">
+    <div class="section-head">
+        <h2 class="section-title" id="proc-title">Process manager</h2>
+        <div class="btn-group" role="group" aria-label="Sort processes by">
+            <button type="button" class="is-active" data-sort="cpu">CPU</button>
+            <button type="button" data-sort="memory">Memory</button>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table class="data">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">User</th>
+                    <th scope="col" class="num">PID</th>
+                    <th scope="col" class="num">CPU</th>
+                    <th scope="col" class="num">Memory</th>
+                    <th scope="col" class="num">Action</th>
+                </tr>
+            </thead>
+            <tbody id="controlProcesses">
+                <tr><td colspan="6" class="empty-row">Loading processes...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="audit-title">
+    <div class="section-head">
+        <h2 class="section-title" id="audit-title">Recent activity</h2>
+        <span class="section-note">Every control action is logged</span>
+    </div>
+    <div class="table-wrap">
+        <table class="data">
+            <thead>
+                <tr>
+                    <th scope="col">Time</th>
+                    <th scope="col">Action</th>
+                    <th scope="col">Client</th>
+                    <th scope="col">Result</th>
+                </tr>
+            </thead>
+            <tbody id="auditRows">
+                <tr><td colspan="4" class="empty-row">Loading activity...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/controls.js"></script>
+{% endblock %}

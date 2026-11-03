@@ -1,0 +1,135 @@
+{# SoftKVM - application shell #}
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ current_config.theme }}" data-wallpaper="{{ current_config.wallpaper }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="SoftKVM - browser based KVM and system dashboard">
+    <meta name="theme-color" content="#0b1220">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoftKVM">
+    <title>{% block title %}SoftKVM{% endblock %}</title>
+    <link rel="manifest" href="/static/manifest.webmanifest">
+    <link rel="icon" href="/static/icons/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="stylesheet" href="/static/css/softkvm.css">
+    <style>
+      :root {
+        --wallpaper-image: url("/static/img/wallpapers/{{ current_config.wallpaper }}.jpg");
+      }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+{% include "partials/icons.html" %}
+
+<div class="wallpaper" id="wallpaper" aria-hidden="true"></div>
+<div class="wallpaper-scrim" aria-hidden="true"></div>
+
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<header class="topbar">
+    <button class="icon-btn topbar-menu" id="sidebarToggle" type="button"
+            aria-label="Toggle navigation" aria-expanded="false" aria-controls="sidebar">
+        <svg class="icon"><use href="#i-menu"></use></svg>
+    </button>
+
+    <div class="topbar-heading">
+        <h1 id="pageTitle">{% block heading %}Dashboard{% endblock %}</h1>
+        <p id="pageSubtitle">{% block subtitle %}{% endblock %}</p>
+    </div>
+
+    <div class="topbar-actions">
+        <button class="icon-btn" id="commandTrigger" type="button" aria-label="Open command palette" title="Command palette (Ctrl+K)">
+            <svg class="icon"><use href="#i-search"></use></svg>
+        </button>
+        <button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle theme" title="Toggle light / dark">
+            <svg class="icon icon-sun"><use href="#i-sun"></use></svg>
+            <svg class="icon icon-moon"><use href="#i-moon"></use></svg>
+        </button>
+        <a class="icon-btn" href="/settings" aria-label="Settings" title="Settings">
+            <svg class="icon"><use href="#i-settings"></use></svg>
+        </a>
+        {% if signed_in %}
+        <a class="icon-btn" href="/logout" aria-label="Sign out" title="Sign out">
+            <svg class="icon"><use href="#i-logout"></use></svg>
+        </a>
+        {% endif %}
+    </div>
+</header>
+
+<div class="sidebar-scrim" id="sidebarScrim" hidden></div>
+
+<aside class="sidebar" id="sidebar" aria-label="System status">
+    <div class="sidebar-inner">
+        <section class="widget widget-host" aria-label="Host status">
+            <div class="widget-head">
+                <h2 class="widget-title">Host</h2>
+                <span class="pill pill-live" id="hostPill"><span class="dot"></span>Live</span>
+            </div>
+            <p class="widget-host-name" id="hostName">-</p>
+            <p class="widget-host-meta" id="hostMeta">-</p>
+        </section>
+
+        <nav class="sidebar-nav" aria-label="Sections">
+            <a class="nav-item {% if active == 'dashboard' %}is-active{% endif %}" href="/">
+                <svg class="icon"><use href="#i-dashboard"></use></svg><span>Dashboard</span>
+            </a>
+            <a class="nav-item {% if active == 'kvm' %}is-active{% endif %}" href="/kvm">
+                <svg class="icon"><use href="#i-monitor"></use></svg><span>KVM Display</span>
+            </a>
+            <a class="nav-item {% if active == 'controls' %}is-active{% endif %}" href="/controls">
+                <svg class="icon"><use href="#i-toggle"></use></svg><span>Controls</span>
+            </a>
+            <a class="nav-item {% if active == 'schedule' %}is-active{% endif %}" href="/schedule">
+                <svg class="icon"><use href="#i-calendar"></use></svg><span>Schedule</span>
+            </a>
+            <a class="nav-item {% if active == 'settings' %}is-active{% endif %}" href="/settings">
+                <svg class="icon"><use href="#i-settings"></use></svg><span>Settings</span>
+            </a>
+        </nav>
+
+        <p class="sidebar-foot">
+            SoftKVM <span id="appVersion">{{ app_version }}</span> &middot; {{ platform_name }}
+        </p>
+    </div>
+</aside>
+
+<main class="content" id="main-content" tabindex="-1">
+    {% block content %}{% endblock %}
+</main>
+
+<nav class="tabbar" aria-label="Primary">
+    <a class="tab {% if active == 'dashboard' %}is-active{% endif %}" href="/">
+        <svg class="icon"><use href="#i-dashboard"></use></svg><span>Home</span>
+    </a>
+    <a class="tab {% if active == 'kvm' %}is-active{% endif %}" href="/kvm">
+        <svg class="icon"><use href="#i-monitor"></use></svg><span>KVM</span>
+    </a>
+    <a class="tab {% if active == 'controls' %}is-active{% endif %}" href="/controls">
+        <svg class="icon"><use href="#i-toggle"></use></svg><span>Controls</span>
+    </a>
+    <a class="tab {% if active == 'schedule' %}is-active{% endif %}" href="/schedule">
+        <svg class="icon"><use href="#i-calendar"></use></svg><span>Schedule</span>
+    </a>
+    <a class="tab {% if active == 'settings' %}is-active{% endif %}" href="/settings">
+        <svg class="icon"><use href="#i-settings"></use></svg><span>Settings</span>
+    </a>
+</nav>
+
+<div class="toast-stack" id="toastStack" role="status" aria-live="polite"></div>
+
+<div class="palette-backdrop" id="paletteBackdrop" hidden>
+    <div class="palette" role="dialog" aria-modal="true" aria-label="Command palette">
+        <input type="text" id="paletteInput" class="palette-input" placeholder="Jump to a section or run an action..."
+               autocomplete="off" spellcheck="false">
+        <ul class="palette-list" id="paletteList"></ul>
+    </div>
+</div>
+
+<script src="/static/js/core.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

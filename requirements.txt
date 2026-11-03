@@ -1,0 +1,21 @@
+# Core web framework
+Flask>=3.0.0,<4.0.0
+
+# Screen capture + encoding
+mss>=9.0.1
+pillow>=10.0.0
+
+# Input injection (mouse / keyboard)
+pynput>=1.7.6
+
+# System telemetry
+psutil>=5.9.8
+
+# Production WSGI server (pure Python, cross-platform)
+waitress>=3.0.0
+
+# QR code generation for the mobile sign-in helper
+qrcode>=7.4.0
+
+# Testing
+pytest>=7.4.0
