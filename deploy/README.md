@@ -178,8 +178,19 @@ network:
 journalctl -u softkvm | grep -i password   # read the generated one
 ```
 
-Then change it under **Settings → Security**, or set `SOFTKVM_PASSWORD` in the
-service environment so it is applied on the next start.
+Then change it under **Settings → Security**, or reset it from the command
+line - this works against a **running** server, no restart needed:
+
+```bash
+python server.py --reset-password          # generate a new one and print it
+python server.py --set-password "my pass"  # set a specific one (8+ characters)
+```
+
+> When running as a service, run these against the deployed copy of the code
+> (e.g. `/opt/softkvm/server.py` on Linux, or the copy under
+> `C:\Program Files\SoftKVM` on Windows) and make sure it uses the same
+> `SOFTKVM_DATA_DIR` as the service, or the reset will land in the wrong
+> config file.
 
 ---
 

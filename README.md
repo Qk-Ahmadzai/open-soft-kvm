@@ -72,21 +72,30 @@ On first run a random password is generated and printed to the console:
 ```
   SoftKVM 2.0.0
   ----------------------------------------------------
-  Open             http://192.168.1.42:3699
+  Reachable on this network:
+    Wi-Fi                http://192.168.1.42:3699
+  Not reachable remotely (link-local / loopback):
+    Ethernet             169.254.232.7
+    Local Area Connection* 1  169.254.242.186
   ----------------------------------------------------
-  Other addresses on this machine (not reachable remotely):
-    Local Area Connection* 1   169.254.242.186
-    Ethernet                  169.254.232.7
+  Access password: kQ3mZx7pTn2w
+  Change it under Settings, or with: python server.py --reset-password
   ----------------------------------------------------
 ```
 
-> The `169.254.x.x` addresses shown under "Other addresses" are Windows'
+The password is shown **only** on the run that creates it. If you ever lose it:
+
+```bash
+python server.py --reset-password          # generate a new one and print it
+python server.py --set-password "my pass"  # set a specific one (8+ characters)
+```
+
+Both work against a **running** server - no restart needed.
+
+> The `169.254.x.x` addresses shown under "Not reachable remotely" are Windows'
 > link-local addresses, auto-assigned to virtual adapters (Hyper-V, WSL,
 > VirtualBox, Bluetooth). They cannot be reached from another machine, so
 > SoftKVM never advertises them as usable.
-
-Set your own password up front with `SOFTKVM_PASSWORD`, or change it later under
-**Settings → Security**.
 
 ## Configuration
 

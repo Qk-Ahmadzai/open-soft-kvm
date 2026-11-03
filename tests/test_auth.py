@@ -123,3 +123,45 @@ def test_logout_clears_cookie(secure_client):
     response = secure_client.get("/logout")
     assert response.status_code == 302
     assert secure_client.get("/api/metrics").status_code == 401
+
+
+def test_reload_password_picks_up_a_change_from_another_process(tmp_path):
+    """`server.py --reset-password` writes to disk; a running server must notice."""
+    from casakvm.config import ConfigStore
+
+    store = ConfigStore(tmp_path / "config.json")
+    first_hash, first_salt = hash_password("first-password-1")
+    store.set_password(first_hash, first_salt)
+
+    # A second store instance stands in for the separate CLI process.
+    other = ConfigStore(tmp_path / "config.json")
+    second_hash, second_salt = hash_password("second-password-2")
+    other.set_password(second_hash, second_salt)
+
+    # The first store still holds the old hash in memory...
+    assert store.current.password_hash == first_hash
+    # ...but reload_password() re-reads it from disk.
+    live_hash, live_salt = store.reload_password()
+    assert live_hash == second_hash
+    assert verify_password("second-password-2", live_hash, live_salt)
+    assert not verify_password("first-password-1", live_hash, live_salt)
+
+
+def test_login_accepts_a_password_changed_in_another_process(secure_client, secure_store):
+    """A reset performed while the server runs must take effect immediately."""
+    from casakvm.auth import hash_password
+
+    new_hash, new_salt = hash_password("brand-new-password")
+    # Write directly to the file, bypassing the running server's memory.
+    import json
+    from pathlib import Path
+
+    path = Path(secure_store.path)
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["password_hash"] = new_hash
+    raw["password_salt"] = new_salt
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+    response = secure_client.post("/login", data={"password": "brand-new-password"})
+    assert response.status_code == 302
+    assert "softkvm_session" in response.headers.get("Set-Cookie", "")

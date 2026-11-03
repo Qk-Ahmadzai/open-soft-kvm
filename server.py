@@ -162,7 +162,7 @@ def main() -> int:
     banner.append("")
     print("\n".join(banner))
 
-    if cfg.use_dev_server and cfg.debug:
+    if cfg.debug:
         logger.info("Starting the Flask development server")
         app.run(host=cfg.host, port=cfg.port, debug=True, threaded=True)
         return 0
