@@ -14,7 +14,7 @@ WorkingDirectory=%h/softkvm
 Environment="SOFTKVM_HOST=0.0.0.0"
 Environment="SOFTKVM_PORT=3699"
 Environment="SOFTKVM_DATA_DIR=%h/.local/share/softkvm"
-Environment="SOFTKVM_REQUIRE_AUTH=true"
+Environment="SOFTKVM_REQUIRE_AUTH=false"
 Environment="PYTHONUNBUFFERED=1"
 # Pick up DISPLAY / WAYLAND_DISPLAY / XAUTHORITY from the graphical session.
 Environment="DISPLAY=:0"

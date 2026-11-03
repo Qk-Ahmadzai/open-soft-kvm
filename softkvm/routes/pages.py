@@ -55,7 +55,10 @@ def login():
             429,
         )
 
-    if verify_password(password, store.current.password_hash, store.current.password_salt):
+    # Re-read the hash from disk: the password may have been changed by
+    # `python server.py --reset-password` in another process.
+    password_hash, password_salt = store.reload_password()
+    if verify_password(password, password_hash, password_salt):
         throttle.record_success(address)
         current_app.extensions["softkvm_audit"].record(
             "login", actor=address, ok=True, category="auth"

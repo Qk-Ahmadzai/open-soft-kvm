@@ -5,6 +5,11 @@ Run with:
 
     python server.py
 
+Manage the access password:
+
+    python server.py --reset-password          # generate a new one and print it
+    python server.py --set-password "my pass"  # set a specific one
+
 Environment variables (all optional):
 
     SOFTKVM_HOST         bind address            (default 0.0.0.0)
@@ -30,70 +35,128 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from softkvm import __version__, create_app  # noqa: E402
+from softkvm.auth import generate_password, hash_password  # noqa: E402
 from softkvm.config import ConfigStore  # noqa: E402
 from softkvm.logging_utils import configure_logging  # noqa: E402
 
 logger = logging.getLogger("softkvm.server")
 
+USAGE = """SoftKVM - browser based KVM and system dashboard
 
-def local_addresses(port: int) -> tuple[list[str], list[tuple[str, str]]]:
-    """Return (usable LAN URLs, all interfaces) for the startup banner.
+Usage:
+  python server.py                      start the server
+  python server.py --reset-password     generate a new password and print it
+  python server.py --set-password PASS  set a specific password
+"""
 
-    ``usable`` excludes loopback and link-local (169.254.x.x) addresses -
-    Windows hands one of those to every virtual adapter (Hyper-V, WSL,
-    VirtualBox, VPN filters) and they cannot be reached from other machines.
-    """
-    usable: list[str] = []
-    every: list[tuple[str, str]] = []
 
+def set_new_password(store, password: str | None = None) -> str:
+    """Store a new password hash. Generates one when ``password`` is None."""
+    chosen = password or generate_password()
+    password_hash, salt = hash_password(chosen)
+    store.set_password(password_hash, salt)
+    return chosen
+
+
+def interface_rows() -> list[dict[str, str]]:
+    """Every IPv4 interface, classified as reachable or not."""
     try:
-        import psutil
+        from softkvm.metrics import interface_addresses
 
-        rows = psutil.net_if_addrs()
-        stats = psutil.net_if_stats()
+        return interface_addresses()
     except Exception:
-        return [f"http://127.0.0.1:{port}"], []
+        return []
 
-    for name, addresses in rows.items():
-        ipv4 = next((a.address for a in addresses if a.family == socket.AF_INET), None)
-        if not ipv4:
-            continue
-        iface_stats = stats.get(name)
-        up = bool(iface_stats.isup) if iface_stats else True
-        every.append((name, ipv4))
 
-        if ipv4.startswith("127."):
-            continue
-        if ipv4.startswith("169.254."):
-            continue
-        if not up:
-            continue
-        usable.append(f"http://{ipv4}:{port}")
+def local_addresses(port: int) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    """Split the host's IPv4 addresses into (reachable, not-reachable).
 
-    if not usable:
-        usable.append(f"http://127.0.0.1:{port}")
-    return usable, every
+    ``169.254.x.x`` link-local addresses and ``127.x`` loopback are never
+    reachable from another machine - Windows assigns link-local addresses to
+    every virtual adapter (Hyper-V, WSL, VirtualBox, VPN filters), so listing
+    them as usable only creates confusion.
+    """
+    reachable: list[tuple[str, str]] = []
+    unreachable: list[tuple[str, str]] = []
+
+    for row in interface_rows():
+        address = row["address"]
+        if address.startswith("127."):
+            unreachable.append((row["name"], address))
+        elif address.startswith("169.254."):
+            unreachable.append((row["name"], address))
+        elif row["up"] == "up":
+            reachable.append((row["name"], f"http://{address}:{port}"))
+        else:
+            unreachable.append((row["name"], address))
+
+    if not reachable:
+        reachable.append(("localhost", f"http://127.0.0.1:{port}"))
+    return reachable, unreachable
 
 
 def main() -> int:
     configure_logging()
+    args = sys.argv[1:]
+
+    # ---- password management (runs without starting the server) --------
+    if args and args[0] in {"--reset-password", "--set-password"}:
+        store = ConfigStore()
+        chosen = None
+        if args[0] == "--set-password":
+            if len(args) < 2 or not args[1]:
+                print("--set-password needs a value", file=sys.stderr)
+                print(USAGE, file=sys.stderr)
+                return 2
+            chosen = args[1]
+            if len(chosen) < 8:
+                print("The password must be at least 8 characters.", file=sys.stderr)
+                return 2
+        password = set_new_password(store, chosen)
+        print("")
+        print("  SoftKVM access password")
+        print("  " + "-" * 40)
+        print(f"    {password}")
+        print("  " + "-" * 40)
+        print(f"  Saved to {store.path}")
+        print("  Sign in at http://127.0.0.1:<port>/ and change it under Settings.")
+        print("")
+        return 0
+
+    if args and args[0] in {"-h", "--help"}:
+        print(USAGE)
+        return 0
+
     store = ConfigStore()
     app = create_app(store)
     cfg = store.current
-    urls, others = local_addresses(cfg.port)
+    reachable, unreachable = local_addresses(cfg.port)
 
     banner = [
         "",
         "  SoftKVM " + __version__,
         "  " + "-" * 52,
     ]
-    for url in urls:
-        banner.append(f"  Open             {url}")
-    if others:
-        banner.append("  " + "-" * 52)
-        banner.append("  Other addresses on this machine (not reachable remotely):")
-        for name, address in others:
-            banner.append(f"    {name:<18} {address}")
+    banner.append("  Reachable on this network:")
+    for name, url in reachable:
+        banner.append(f"    {name:<20} {url}")
+    if unreachable:
+        banner.append("")
+        banner.append("  Not reachable remotely (link-local / loopback):")
+        for name, address in unreachable:
+            banner.append(f"    {name:<20} {address}")
+    banner.append("  " + "-" * 52)
+
+    generated = app.extensions.get("softkvm_generated_password")
+    if generated:
+        banner.append(f"  Access password: {generated}")
+        banner.append("  Change it under Settings, or with: python server.py --reset-password")
+    elif cfg.require_auth:
+        banner.append("  Access password: already set (not shown again)")
+        banner.append("  Forgotten it?  Run: python server.py --reset-password")
+    else:
+        banner.append("  Authentication is DISABLED - anyone on the network can control this machine.")
+
     banner.append("  " + "-" * 52)
     banner.append("  Press Ctrl+C to stop.")
     banner.append("")

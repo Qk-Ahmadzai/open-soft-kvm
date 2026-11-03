@@ -87,14 +87,16 @@ def create_app(config_store: ConfigStore | None = None) -> Flask:
     app.extensions["softkvm_version"] = __version__
 
     # -- first-run password ----------------------------------------
+    generated_password: str | None = None
     if not cfg.password_hash:
         password = os.environ.get("SOFTKVM_PASSWORD") or generate_password()
         password_hash, salt = hash_password(password)
         store.set_password(password_hash, salt)
+        generated_password = password
         logger.info("=" * 68)
         logger.info(" SoftKVM %s - first run", __version__)
         logger.info(" Access password: %s", password)
-        logger.info(" Change it from Settings, or set SOFTKVM_PASSWORD and restart.")
+        logger.info(" Change it from Settings, or with: python server.py --reset-password")
         logger.info("=" * 68)
         if not os.environ.get("SOFTKVM_PASSWORD"):
             print("\n" + "=" * 68)
@@ -102,6 +104,12 @@ def create_app(config_store: ConfigStore | None = None) -> Flask:
             print(f" Access password : {password}")
             print(" Save it now - it is not shown again.")
             print("=" * 68 + "\n")
+    else:
+        logger.info(
+            "Access password is already set. Run 'python server.py --reset-password' to set a new one."
+        )
+
+    app.extensions["softkvm_generated_password"] = generated_password
 
     # -- blueprints --------------------------------------------------
     from .routes.api import api_bp

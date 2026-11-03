@@ -202,6 +202,26 @@ class ConfigStore:
             self._config.password_salt = salt
             self.save()
 
+    def reload_password(self) -> tuple[str, str]:
+        """Re-read the password hash from disk.
+
+        ``python server.py --reset-password`` runs in a different process, so a
+        running server would otherwise keep validating against the hash it
+        loaded at startup. Re-reading on each login keeps the reset effective
+        without needing a restart.
+        """
+        with self._lock:
+            try:
+                raw = json.loads(self.path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                return self._config.password_hash, self._config.password_salt
+            password_hash = raw.get("password_hash") or ""
+            salt = raw.get("password_salt") or ""
+            if password_hash:
+                self._config.password_hash = password_hash
+                self._config.password_salt = salt
+            return self._config.password_hash, self._config.password_salt
+
 
 def available_wallpapers(directory: Path | None = None) -> list[dict[str, str]]:
     """List bundled wallpapers, newest-looking names first."""

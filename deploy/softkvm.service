@@ -12,7 +12,7 @@ WorkingDirectory=/opt/softkvm
 Environment="SOFTKVM_HOST=0.0.0.0"
 Environment="SOFTKVM_PORT=3699"
 Environment="SOFTKVM_DATA_DIR=/var/lib/softkvm"
-Environment="SOFTKVM_REQUIRE_AUTH=true"
+Environment="SOFTKVM_REQUIRE_AUTH=false"
 Environment="PYTHONUNBUFFERED=1"
 ExecStart=/opt/softkvm/.venv/bin/python /opt/softkvm/server.py
 Restart=always
