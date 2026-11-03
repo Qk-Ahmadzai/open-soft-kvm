@@ -39,7 +39,6 @@ class Config:
     host: str = "0.0.0.0"
     port: int = 3699
     debug: bool = False
-    use_dev_server: bool = True
 
     # --- security ---
     require_auth: bool = True
