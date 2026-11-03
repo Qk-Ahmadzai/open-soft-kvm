@@ -127,7 +127,7 @@ def test_logout_clears_cookie(secure_client):
 
 def test_reload_password_picks_up_a_change_from_another_process(tmp_path):
     """`server.py --reset-password` writes to disk; a running server must notice."""
-    from casakvm.config import ConfigStore
+    from softkvm.config import ConfigStore
 
     store = ConfigStore(tmp_path / "config.json")
     first_hash, first_salt = hash_password("first-password-1")
