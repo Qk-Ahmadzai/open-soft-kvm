@@ -52,6 +52,16 @@ def test_monitors_endpoint(client):
     assert "active" in payload
 
 
+def test_monitors_endpoint_reports_capture_status(client):
+    """The UI needs to know *why* a stream is empty, not just that it is."""
+    payload = client.get("/api/monitors").get_json()
+    capture = payload["capture"]
+    assert "available" in capture
+    assert "error" in capture
+    assert "running" in capture
+    assert capture["monitor"] == payload["active"]
+
+
 def test_input_requires_json_object(client):
     response = client.post("/api/input", data="not json", content_type="text/plain")
     assert response.status_code == 400

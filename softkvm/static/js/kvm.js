@@ -401,8 +401,41 @@
         "monitorLabel",
         active ? active.width + "x" + active.height : "Display " + payload.active
       );
+      showCaptureStatus(payload);
     } catch (err) {
       K.setText("monitorLabel", "Unavailable");
+    }
+  }
+
+  function showCaptureStatus(payload) {
+    const capture = (payload && payload.capture) || {};
+    const overlay = document.getElementById("kvmOverlay");
+    const statusLabel = document.getElementById("kvmStatus");
+    if (!overlay) return;
+
+    if (capture.error) {
+      overlay.hidden = false;
+      overlay.innerHTML = "";
+      const box = document.createElement("div");
+      box.className = "kvm-error";
+      const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      icon.setAttribute("class", "icon");
+      const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      use.setAttribute("href", "#i-alert");
+      icon.appendChild(use);
+      const text = document.createElement("p");
+      text.textContent = capture.error;
+      box.appendChild(icon);
+      box.appendChild(text);
+      overlay.appendChild(box);
+      if (statusLabel) statusLabel.textContent = "Unavailable";
+      K.setText("monitorLabel", "Unavailable");
+      return;
+    }
+
+    // Restore the normal spinner if the overlay was replaced by an error.
+    if (!overlay.querySelector(".kvm-error")) {
+      overlay.innerHTML = '<div class="kvm-spinner"></div>';
     }
   }
 

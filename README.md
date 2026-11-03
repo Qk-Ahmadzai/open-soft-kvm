@@ -135,11 +135,29 @@ powershell -ExecutionPolicy Bypass -File deploy\install-windows.ps1            #
 powershell -ExecutionPolicy Bypass -File deploy\install-windows.ps1 -Mode Service
 ```
 
+**Diagnosing a Linux install**
+
+```bash
+./deploy/check.sh
+```
+
+It checks python, the virtualenv, the dependencies, the systemd unit, the
+service state, the listening port, the graphical session and the config, then
+prints PASS/FAIL for each and the exact commands to follow up on whatever
+failed.
+
 > **Important:** screen capture and mouse/keyboard injection need access to the
 > interactive desktop. A Windows Service and a Linux *system* service both run
 > without one (session 0), so the dashboard and telemetry work but the screen
 > stream does not. Use the scheduled task (Windows) or the *user* service
-> (Linux) for the full feature set.
+> (Linux) for the full feature set. On a headless Linux box you can still run
+> the dashboard against a virtual display:
+>
+> ```bash
+> sudo apt-get install -y xvfb
+> Xvfb :99 -screen 0 1920x1080x24 &
+> export DISPLAY=:99
+> ```
 
 ## API
 

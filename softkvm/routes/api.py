@@ -92,12 +92,22 @@ def processes():
 def monitors():
     from ..capture import list_monitors
 
+    manager = _ext("softkvm_stream")
+    current = _ext("softkvm_config").current.monitor_index
     try:
         items = [monitor.as_dict() for monitor in list_monitors()]
+        capture_error = None
     except Exception as exc:
-        return _error(f"could not enumerate displays: {exc}", 503)
-    current = _ext("softkvm_config").current.monitor_index
-    return jsonify({"monitors": items, "active": current})
+        items = []
+        capture_error = str(exc)
+    return jsonify(
+        {
+            "monitors": items,
+            "active": current,
+            "capture": manager.status(current),
+            "capture_error": capture_error,
+        }
+    )
 
 
 @api_bp.route("/info")

@@ -36,6 +36,21 @@ def open_capture():
     return factory()
 
 
+def _describe_capture_error(exc: Exception) -> str:
+    """Turn a raw capture exception into something a human can act on."""
+    text = str(exc)
+    lowered = text.lower()
+    if "display" in lowered and ("environment" in lowered or "xdg" in lowered):
+        return (
+            "No graphical display available. Screen capture needs a desktop "
+            "session - check DISPLAY, or run the service as a user service "
+            "inside your graphical session."
+        )
+    if "permission" in lowered or "access is denied" in lowered:
+        return "Permission denied while opening the display."
+    return f"Screen capture unavailable: {text}"
+
+
 @dataclass
 class MonitorInfo:
     """A single display known to the capture backend."""
@@ -123,6 +138,7 @@ class ScreenStreamer:
         self._stop = threading.Event()
         self._last_error: str | None = None
         self.frames_produced = 0
+        self._available = True
         # Stop capturing shortly after the last viewer disconnects, so an
         # abandoned KVM tab does not keep burning CPU.
         self.idle_timeout = 15.0
@@ -178,6 +194,22 @@ class ScreenStreamer:
         with self._lock:
             return len(self._subscribers)
 
+    def status(self) -> dict[str, Any]:
+        """Current capture state, so the UI can explain an empty stream."""
+        thread = self._thread
+        return {
+            "monitor": self.monitor_index,
+            "available": self._available and self._last_error is None,
+            "running": bool(thread and thread.is_alive()),
+            "subscribers": self.subscriber_count,
+            "frames": self.frames_produced,
+            "error": self._last_error,
+            "width": self.width,
+            "height": self.height,
+            "fps": self.fps,
+            "quality": self.quality,
+        }
+
     @staticmethod
     def _drop_oldest(sub: queue.Queue) -> None:
         try:
@@ -190,17 +222,27 @@ class ScreenStreamer:
         try:
             sct = open_capture()
         except Exception as exc:  # pragma: no cover - platform dependent
-            self._last_error = f"capture unavailable: {exc}"
+            self._last_error = _describe_capture_error(exc)
+            self._available = False
             return
 
         try:
-            monitor = resolve_monitor(self.monitor_index)
-            region = {
-                "left": monitor.left,
-                "top": monitor.top,
-                "width": monitor.width,
-                "height": monitor.height,
-            }
+            try:
+                monitor = resolve_monitor(self.monitor_index)
+                region = {
+                    "left": monitor.left,
+                    "top": monitor.top,
+                    "width": monitor.width,
+                    "height": monitor.height,
+                }
+            except Exception as exc:
+                # No display / no DISPLAY / permission problem - keep the
+                # thread alive so the reason stays visible to the UI.
+                self._last_error = _describe_capture_error(exc)
+                self._available = False
+                return
+
+            self._available = True
             interval = 1.0 / self.fps
             next_frame = time.time()
 
@@ -220,7 +262,7 @@ class ScreenStreamer:
                     self.frames_produced += 1
                     self._publish(frame)
                 except Exception as exc:  # keep the stream alive on transient errors
-                    self._last_error = str(exc)
+                    self._last_error = _describe_capture_error(exc)
                     time.sleep(0.2)
 
                 next_frame += interval
@@ -297,6 +339,13 @@ class StreamManager:
             self._streamers.clear()
         for streamer in streamers:
             streamer.stop()
+
+    def status(self, monitor_index: int | None = None) -> dict[str, Any]:
+        """Capture status for one monitor (or the currently configured one)."""
+        if monitor_index is None:
+            monitor_index = self._config_store.current.monitor_index
+        streamer = self.streamer_for(monitor_index)
+        return streamer.status()
 
 
 def multipart_stream(sub: queue.Queue, unsubscribe) -> Iterator[bytes]:
